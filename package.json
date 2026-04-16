@@ -1,0 +1,26 @@
+{
+  "name": "sistema_distribuidos_trabajo_2",
+  "version": "1.0.0",
+  "description": "trabajo de sistemas distribuidos",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kg-fs/sistema_distribuidos_trabajo_2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kg-fs/sistema_distribuidos_trabajo_2/issues"
+  },
+  "homepage": "https://github.com/kg-fs/sistema_distribuidos_trabajo_2#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.2",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}
