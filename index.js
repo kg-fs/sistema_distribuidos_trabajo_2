@@ -8,7 +8,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ==================== MIDDLEWARE ====================
-
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -18,7 +17,6 @@ app.use(cors({
 app.use(express.json());
 
 // ==================== SUPABASE ====================
-
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
@@ -27,10 +25,7 @@ const supabase = createClient(
 // ==================== RUTAS ====================
 
 app.get("/", (req, res) => {
-  res.json({
-    message: "API HA funcionando 🚀",
-    server: os.hostname()
-  });
+  res.json({ message: "API funcionando 🚀", server: os.hostname() });
 });
 
 app.get("/status", (req, res) => {
@@ -41,9 +36,7 @@ app.get("/status", (req, res) => {
   });
 });
 
-// ==================== CRUD DE NOTES ====================
-
-// 1. Crear una nueva nota (POST) - CORREGIDO
+// 1. Crear una nueva nota (POST) - Versión limpia
 app.post("/notes", async (req, res) => {
   const { text } = req.body;
 
@@ -55,15 +48,15 @@ app.post("/notes", async (req, res) => {
 
   const { data, error } = await supabase
     .from("Notes")
-    .insert([{ text }])           // Solo enviamos 'text'
+    .insert([{ text: text.trim() }])   // Solo enviamos text
     .select()
-    .single();                    // Usamos .single() para mejor manejo
+    .single();
 
   if (error) {
-    console.error("Error al insertar nota en Supabase:", error);
+    console.error("Error Supabase:", error);
     return res.status(500).json({ 
       error: error.message,
-      details: error.details || error.hint || "Error desconocido en la base de datos"
+      details: error.details || error.hint || "Error en la base de datos"
     });
   }
 
@@ -74,7 +67,7 @@ app.post("/notes", async (req, res) => {
   });
 });
 
-// 2. Obtener todas las notas (GET)
+// 2. Obtener todas las notas
 app.get("/notes", async (req, res) => {
   const { data, error } = await supabase
     .from("Notes")
@@ -93,7 +86,7 @@ app.get("/notes", async (req, res) => {
   });
 });
 
-// 3. Obtener una nota por ID
+// 3. Obtener nota por ID
 app.get("/notes/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -113,30 +106,24 @@ app.get("/notes/:id", async (req, res) => {
   });
 });
 
-// 4. Actualizar una nota (PUT)
+// 4. Actualizar nota
 app.put("/notes/:id", async (req, res) => {
   const { id } = req.params;
   const { text } = req.body;
 
   if (!text || typeof text !== 'string' || text.trim() === '') {
-    return res.status(400).json({ error: "El campo 'text' es obligatorio y no puede estar vacío" });
+    return res.status(400).json({ error: "El campo 'text' es obligatorio" });
   }
 
   const { data, error } = await supabase
     .from("Notes")
-    .update({ text })
+    .update({ text: text.trim() })
     .eq("id", id)
     .select()
     .single();
 
-  if (error) {
-    console.error("Error al actualizar nota:", error);
-    return res.status(500).json({ error: error.message });
-  }
-
-  if (!data) {
-    return res.status(404).json({ error: "Nota no encontrada" });
-  }
+  if (error) return res.status(500).json({ error: error.message });
+  if (!data) return res.status(404).json({ error: "Nota no encontrada" });
 
   res.json({
     message: "Nota actualizada exitosamente",
@@ -145,7 +132,7 @@ app.put("/notes/:id", async (req, res) => {
   });
 });
 
-// 5. Eliminar una nota (DELETE)
+// 5. Eliminar nota
 app.delete("/notes/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -154,10 +141,7 @@ app.delete("/notes/:id", async (req, res) => {
     .delete()
     .eq("id", id);
 
-  if (error) {
-    console.error("Error al eliminar nota:", error);
-    return res.status(500).json({ error: error.message });
-  }
+  if (error) return res.status(500).json({ error: error.message });
 
   res.json({
     message: "Nota eliminada exitosamente",
@@ -165,7 +149,7 @@ app.delete("/notes/:id", async (req, res) => {
   });
 });
 
-// Levantar servidor
+// ==================== INICIAR SERVIDOR ====================
 app.listen(PORT, () => {
   console.log(`Servidor ${os.hostname()} corriendo en puerto ${PORT}`);
 });
