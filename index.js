@@ -1,12 +1,24 @@
 require('dotenv').config();
 const express = require("express");
 const os = require("os");
+const cors = require("cors");                    // ← Necesario para CORS
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ==================== MIDDLEWARE ====================
+
+// CORS habilitado de forma simple (recomendado para desarrollo)
+app.use(cors({
+  origin: '*',                    // Permite cualquier origen (localhost y producción)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
+
+// ==================== SUPABASE ====================
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
