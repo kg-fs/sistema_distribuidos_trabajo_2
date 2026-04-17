@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require("express");
 const os = require("os");
-const cors = require("cors");                    // ← Necesario para CORS
+const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
@@ -9,9 +9,8 @@ const PORT = process.env.PORT || 3000;
 
 // ==================== MIDDLEWARE ====================
 
-// CORS habilitado de forma simple (recomendado para desarrollo)
 app.use(cors({
-  origin: '*',                    // Permite cualquier origen (localhost y producción)
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -44,29 +43,34 @@ app.get("/status", (req, res) => {
 
 // ==================== CRUD DE NOTES ====================
 
-// 1. Crear una nueva nota (POST)
+// 1. Crear una nueva nota (POST) - CORREGIDO
 app.post("/notes", async (req, res) => {
   const { text } = req.body;
 
-  if (!text) {
+  if (!text || typeof text !== 'string' || text.trim() === '') {
     return res.status(400).json({ 
-      error: "El campo 'text' es obligatorio" 
+      error: "El campo 'text' es obligatorio y no puede estar vacío" 
     });
   }
 
   const { data, error } = await supabase
     .from("Notes")
-    .insert([{ text }])
-    .select();
+    .insert([{ text }])           // Solo enviamos 'text'
+    .select()
+    .single();                    // Usamos .single() para mejor manejo
 
   if (error) {
-    return res.status(500).json({ error: error.message });
+    console.error("Error al insertar nota en Supabase:", error);
+    return res.status(500).json({ 
+      error: error.message,
+      details: error.details || error.hint || "Error desconocido en la base de datos"
+    });
   }
 
   res.status(201).json({
     message: "Nota creada exitosamente",
     server: os.hostname(),
-    note: data[0]
+    note: data
   });
 });
 
@@ -78,6 +82,7 @@ app.get("/notes", async (req, res) => {
     .order("created_at", { ascending: false });
 
   if (error) {
+    console.error("Error al obtener notas:", error);
     return res.status(500).json({ error: error.message });
   }
 
@@ -113,28 +118,30 @@ app.put("/notes/:id", async (req, res) => {
   const { id } = req.params;
   const { text } = req.body;
 
-  if (!text) {
-    return res.status(400).json({ error: "El campo 'text' es obligatorio" });
+  if (!text || typeof text !== 'string' || text.trim() === '') {
+    return res.status(400).json({ error: "El campo 'text' es obligatorio y no puede estar vacío" });
   }
 
   const { data, error } = await supabase
     .from("Notes")
     .update({ text })
     .eq("id", id)
-    .select();
+    .select()
+    .single();
 
   if (error) {
+    console.error("Error al actualizar nota:", error);
     return res.status(500).json({ error: error.message });
   }
 
-  if (data.length === 0) {
+  if (!data) {
     return res.status(404).json({ error: "Nota no encontrada" });
   }
 
   res.json({
     message: "Nota actualizada exitosamente",
     server: os.hostname(),
-    note: data[0]
+    note: data
   });
 });
 
@@ -148,6 +155,7 @@ app.delete("/notes/:id", async (req, res) => {
     .eq("id", id);
 
   if (error) {
+    console.error("Error al eliminar nota:", error);
     return res.status(500).json({ error: error.message });
   }
 
